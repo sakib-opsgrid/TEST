@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kibana Report Processor — Infozillion Teletech</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+<!-- OpsHub integration: hide header instantly when loaded inside hub -->
+<script>
+(function(){
+  if(window.location.search.includes('hub=1')||window.self!==window.top){
+    document.documentElement.classList.add('in-hub');
+  }
+})();
+</script>
+<style>
+.in-hub .unified-header,
+.in-hub .site-header,
+.in-hub .app-header,
+.in-hub .app-bar,
+.in-hub .page-header{
+  display:none!important;
+  height:0!important;
+  overflow:hidden!important;
+  margin:0!important;
+  padding:0!important;
+}
+.in-hub .tab-nav{ top:0!important; }
+.in-hub{ --topbar:0px!important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="unified-header">
+  <div class="uh-icon" style="background:#F0FDF9;border-color:#86EFCD;color:#00A878">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>
+  </div>
+  <div class="uh-info">
+    <div class="uh-title">Infozillion Teletech Bd Ltd <span class="uh-badge" style="background:#F0FDF9;border:1px solid #86EFCD;color:#00A878">v2.4</span></div>
+    <div class="uh-sub">Service Assurance · ANS Traffic Report · MNO &amp; IPTSP CDR</div>
+  </div>
+  <div class="uh-actions">
+    <div class="date-badge" style="font-size:12px">
+      <span style="color:#A8A69E;font-family:'DM Mono',monospace;font-size:10px">Date</span>
+      <span style="color:#00A878;font-weight:600;font-family:'DM Mono',monospace" id="date-display">&mdash;</span>
+    </div>
+  </div>
+</header>
+
+  <div class="instructions">
+    <div class="inst-step"><span class="inst-num">1</span><span>Kibana → filter <code>ansResponseCode is 1000</code> + operator → note <strong>Documents count</strong></span></div>
+    <div class="inst-step"><span class="inst-num">2</span><span>Same with <code>ansResponseCode is not 1000</code> → note count</span></div>
+    <div class="inst-step"><span class="inst-num">3</span><span>Enter all counts below → click <strong>Generate Report</strong></span></div>
+  </div>
+
+  <!-- MNO Section -->
+  <div class="section-label mno-label">MNO CDR — A2P Transactional MNO CDR</div>
+  <div class="input-table">
+    <div class="input-header">
+      <span>Operator</span>
+      <span>Success <small>(is 1000)</small></span>
+      <span>Error <small>(is not 1000)</small></span>
+    </div>
+    <div class="input-row" data-op="GrameenPhone" data-type="MNO">
+      <span class="op-name">Grameenphone</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Robi" data-type="MNO">
+      <span class="op-name">Robi</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Banglalink" data-type="MNO">
+      <span class="op-name">Banglalink</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Teletalk" data-type="MNO">
+      <span class="op-name">Teletalk</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+  </div>
+
+  <!-- IPTSP Section -->
+  <div class="section-label iptsp-label">IPTSP CDR — A2P Transactional IPTSP CDR</div>
+  <div class="input-table">
+    <div class="input-header">
+      <span>Operator</span>
+      <span>Success <small>(is 1000)</small></span>
+      <span>Error <small>(is not 1000)</small></span>
+    </div>
+    <div class="input-row" data-op="ADN" data-type="IPTSP">
+      <span class="op-name">ADN</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="FusionNet" data-type="IPTSP">
+      <span class="op-name">FusionNet</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Mirnet" data-type="IPTSP">
+      <span class="op-name">Mirnet</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Brilliant" data-type="IPTSP">
+      <span class="op-name">Brilliant</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="RanksITT" data-type="IPTSP">
+      <span class="op-name">RanksITT</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="AmberIT" data-type="IPTSP">
+      <span class="op-name">AmberIT</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Metronet" data-type="IPTSP">
+      <span class="op-name">Metronet</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Premium" data-type="IPTSP">
+      <span class="op-name">Premium</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="RaceOnline" data-type="IPTSP">
+      <span class="op-name">RaceOnline</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Bracnet" data-type="IPTSP">
+      <span class="op-name">Bracnet</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Weblink" data-type="IPTSP">
+      <span class="op-name">Weblink</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="RedData" data-type="IPTSP">
+      <span class="op-name">RedData</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="BDCOM" data-type="IPTSP">
+      <span class="op-name">BDCOM</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="BTCL" data-type="IPTSP">
+      <span class="op-name">BTCL</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="Link3" data-type="IPTSP">
+      <span class="op-name">Link3</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="ICON" data-type="IPTSP">
+      <span class="op-name">ICON</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="AGNI" data-type="IPTSP">
+      <span class="op-name">AGNI</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="ICC" data-type="IPTSP">
+      <span class="op-name">ICC</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+    <div class="input-row" data-op="RoyalGreen" data-type="IPTSP">
+      <span class="op-name">RoyalGreen</span>
+      <input type="number" class="count-input success-input" placeholder="0" min="0" />
+      <input type="number" class="count-input error-input" placeholder="0" min="0" />
+    </div>
+  </div>
+
+  <div class="process-wrap">
+    <button class="process-btn" onclick="generateReport()">⚡ Generate Report</button>
+    <button class="clear-btn" onclick="clearAll()">✕ Clear All</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="results-section">
+    <div class="results-header">
+      <span class="results-title">Report Output</span>
+      <span class="results-meta" id="results-meta"></span>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Success</div>
+        <div class="stat-value success" id="stat-success">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Error</div>
+        <div class="stat-value error" id="stat-error">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Grand Total</div>
+        <div class="stat-value total" id="stat-total">0</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>ANS / Operator</th>
+              <th class="num">Error</th>
+              <th class="num">Success</th>
+              <th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody id="result-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn-action primary" onclick="copyForSheets()">📋 Copy for Google Sheets</button>
+      <button class="btn-action" onclick="downloadCSV()">⬇ Download as CSV</button>
+    </div>
+  </div>
+
+
+</div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+<script>
+window.addEventListener("message", function(e) {
+  if (e.data === "hide-header") {
+    // Reset from hub
+    if (e.data && e.data.type === 'reset-tool') {
+      if (typeof clearAll === 'function') clearAll();
+      // Also hide results section if visible
+      var rs = document.querySelector('.results-section');
+      if (rs) rs.classList.remove('visible');
+    }
+
+    var h = document.querySelector("header");
+    if (h) h.style.display = "none";
+  }
+});
+</script>
+</body>
+</html>
