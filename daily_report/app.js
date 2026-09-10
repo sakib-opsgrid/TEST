@@ -291,9 +291,9 @@ function copyReportText(typeLabel, prefix, btn){
   const toTime   = document.getElementById(`${isNine?'9xxx':'1xxx'}-to-time`).value;
   const period = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
   const text = `${typeLabel},\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
-  showWaModal(text);
   navigator.clipboard.writeText(text).then(()=>{
     const orig=btn.textContent; btn.textContent='Copied ✓';
+    showToast('Copied — paste into WhatsApp');
     setTimeout(()=>btn.textContent=orig,2000);
   }).catch(()=>showToast('Copy failed — try again'));
 }
@@ -905,9 +905,9 @@ function copyDLRText(which,btn){
   const statusStr=status==='Normal'?'Normal':(issue||'—');
   const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
   const text=`DLR — ${which.toUpperCase()},\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
-  showWaModal(text);
   navigator.clipboard.writeText(text).then(()=>{
     const orig=btn.textContent; btn.textContent='Copied ✓';
+    showToast('Copied — paste into WhatsApp');
     setTimeout(()=>btn.textContent=orig,2000);
   }).catch(()=>showToast('Copy failed — try again'));
 }
@@ -933,19 +933,6 @@ function initDelay(){
 }
 
 function initDelayFor(which){
-  const dropZone=document.getElementById(`delay-dropZone-${which}`);
-  const fileInput=document.getElementById(`delay-fileInput-${which}`);
-  const browseBtn=document.getElementById(`delay-browseBtn-${which}`);
-
-  browseBtn.addEventListener('click',e=>{e.stopPropagation();fileInput.click();});
-  dropZone.addEventListener('click',e=>{if(e.target.closest('button'))return;fileInput.click();});
-  dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
-  dropZone.addEventListener('dragleave',e=>{if(!dropZone.contains(e.relatedTarget))dropZone.classList.remove('drag-over');});
-  dropZone.addEventListener('drop',e=>{
-    e.preventDefault();dropZone.classList.remove('drag-over');
-    const file=e.dataTransfer.files[0];if(file)handleDelayFile(which,file);
-  });
-  fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleDelayFile(which,fileInput.files[0]);fileInput.value='';});
   document.getElementById(`delay-resetBtn-${which}`).addEventListener('click',()=>resetDelay(which));
   document.getElementById(`delay-generateBtn-${which}`).addEventListener('click',()=>generateDelayCard(which));
   document.getElementById(`delay-copyImgBtn-${which}`).addEventListener('click',()=>captureDelayCard(which,false));
@@ -987,6 +974,8 @@ function setDelayLoading(which,label,pct){
 
 function handleDelayFile(which,file){
   if(!file.name.toLowerCase().endsWith('.csv')){showToast('Please select a .csv file');return;}
+  const zone=document.getElementById(`zone-delay${which}`);
+  const statusEl=document.getElementById(`status-delay${which}`);
   showDelayScreen(which,'loading');setDelayLoading(which,'Reading file…',10);
   const reader=new FileReader();
   reader.onprogress=e=>{if(e.lengthComputable)setDelayLoading(which,'Reading file…',(e.loaded/e.total)*40);};
@@ -1003,10 +992,16 @@ function handleDelayFile(which,file){
           setTimeout(()=>{
             renderDelayResults(which,data,file.name,rows.length);
             setDelayLoading(which,'Done',100);
+            if(statusEl){statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows parsed`;statusEl.className='upload-status';}
+            if(zone)zone.classList.add('loaded');
             setTimeout(()=>showDelayScreen(which,'results'),150);
           },80);
         },40);
-      }catch(err){showDelayScreen(which,'upload');showToast('Error: '+err.message);}
+      }catch(err){
+        showDelayScreen(which,'upload');
+        if(statusEl){statusEl.textContent='⚠ '+err.message;statusEl.className='upload-status error';}
+        showToast('Error: '+err.message);
+      }
     },30);
   };
   reader.onerror=()=>{showDelayScreen(which,'upload');showToast('Could not read file');};
@@ -1272,6 +1267,9 @@ function resetDelay(which){
   initDelayDatetimes(which);
   document.getElementById(`delay-fromHint-${which}`).textContent='auto from CSV';
   document.getElementById(`delay-toHint-${which}`).textContent='auto from CSV';
+  const zone=document.getElementById(`zone-delay${which}`);if(zone)zone.classList.remove('loaded');
+  const status=document.getElementById(`status-delay${which}`);if(status){status.textContent='';status.className='upload-status';}
+  const rep=document.getElementById(`delay-fReporter-${which}`);if(rep)rep.value='Rizvi';
   showDelayScreen(which,'upload');
 }
 
@@ -1443,8 +1441,10 @@ function resetAll(btn){
   // Backup
   const list=document.getElementById('save-file-list');if(list)list.innerHTML='';
 
-  const orig=btn.textContent;btn.textContent='Done ✓';
-  setTimeout(()=>{btn.textContent=orig;},2000);
+  if(btn){
+    const orig=btn.textContent;btn.textContent='Done ✓';
+    setTimeout(()=>{btn.textContent=orig;},2000);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1456,7 +1456,92 @@ document.addEventListener('DOMContentLoaded',()=>{
   refreshHTTP();
   initDelay();
   initUploadZoneDragDrop();
+  initAllReporterAutocompletes();
 });
+
+/* ── Reporter name autocomplete ──────────────────────────────────── */
+const REPORTER_NAMES=['Rizvi','Najmaz Sakib','Apu','Nayeem','Ferdous','Moshaid','Nazmul','Borhan','Shuvo','Imtiaj','Rahim','Mamun'];
+
+function initReporterAutocomplete(inputId){
+  const input=document.getElementById(inputId);
+  if(!input) return;
+
+  let wrap=input.parentElement;
+  if(!wrap.classList.contains('autocomplete-wrap')){
+    wrap=document.createElement('div');
+    wrap.className='autocomplete-wrap';
+    input.parentNode.insertBefore(wrap,input);
+    wrap.appendChild(input);
+  }
+  const list=document.createElement('div');
+  list.className='autocomplete-list';
+  wrap.appendChild(list);
+
+  let activeIdx=-1;
+
+  function renderList(matches){
+    activeIdx=-1;
+    list.innerHTML=matches.map(n=>`<div class="autocomplete-item" data-name="${esc(n)}">${esc(n)}</div>`).join('');
+    list.style.display=matches.length?'block':'none';
+  }
+
+  input.addEventListener('input',()=>{
+    const v=input.value.trim().toLowerCase();
+    if(!v){ list.style.display='none'; return; }
+    renderList(REPORTER_NAMES.filter(n=>n.toLowerCase().includes(v)));
+  });
+
+  input.addEventListener('focus',()=>{
+    if(input.value.trim()) renderList(REPORTER_NAMES.filter(n=>n.toLowerCase().includes(input.value.trim().toLowerCase())));
+  });
+
+  input.addEventListener('keydown',e=>{
+    const items=[...list.querySelectorAll('.autocomplete-item')];
+    if(!items.length || list.style.display==='none') return;
+    if(e.key==='ArrowDown'){
+      e.preventDefault();
+      activeIdx=Math.min(activeIdx+1,items.length-1);
+      items.forEach((it,i)=>it.classList.toggle('active',i===activeIdx));
+      items[activeIdx].scrollIntoView({block:'nearest'});
+    } else if(e.key==='ArrowUp'){
+      e.preventDefault();
+      activeIdx=Math.max(activeIdx-1,0);
+      items.forEach((it,i)=>it.classList.toggle('active',i===activeIdx));
+      items[activeIdx].scrollIntoView({block:'nearest'});
+    } else if(e.key==='Enter'){
+      if(activeIdx>=0 && items[activeIdx]){
+        e.preventDefault();
+        input.value=items[activeIdx].dataset.name;
+        list.style.display='none';
+      } else if(items.length===1){
+        e.preventDefault();
+        input.value=items[0].dataset.name;
+        list.style.display='none';
+      }
+    } else if(e.key==='Escape'){
+      list.style.display='none';
+    }
+  });
+
+  list.addEventListener('mousedown',e=>{
+    const item=e.target.closest('.autocomplete-item');
+    if(item){ input.value=item.dataset.name; list.style.display='none'; }
+  });
+
+  input.addEventListener('blur',()=>{
+    setTimeout(()=>{ list.style.display='none'; },150);
+  });
+}
+
+function initAllReporterAutocompletes(){
+  [
+    '9mno-reporter','9iptsp-reporter',
+    '1mno-reporter','1iptsp-reporter',
+    'http-reporter',
+    'dlrmno-reporter','dlriptsp-reporter',
+    'delay-fReporter-mno','delay-fReporter-iptsp'
+  ].forEach(initReporterAutocomplete);
+}
 
 /* ── Generic drag-and-drop for all .upload-zone boxes (9xxx, 1xxx, 4xx/5xx HTTP, DLR) ── */
 function initUploadZoneDragDrop() {
@@ -1469,6 +1554,8 @@ function initUploadZoneDragDrop() {
     'zone-http':   file => parseHTTPcsv(file),
     'zone-dlrmno':    file => parseDLR(file, 'mno'),
     'zone-dlriptsp':  file => parseDLR(file, 'iptsp'),
+    'zone-delaymno':   file => handleDelayFile('mno', file),
+    'zone-delayiptsp': file => handleDelayFile('iptsp', file),
   };
 
   document.querySelectorAll('.upload-zone').forEach(zone => {
@@ -1500,27 +1587,3 @@ function initUploadZoneDragDrop() {
     });
   });
 }
-
-/* ── WA Preview Modal ─────────────────────────── */
-function showWaModal(text) {
-  const overlay = document.getElementById('wa-modal-overlay');
-  const pre = document.getElementById('wa-modal-content');
-  if (!overlay || !pre) return;
-  pre.textContent = text;
-  overlay.style.display = 'flex';
-}
-function closeWaModal() {
-  const o = document.getElementById('wa-modal-overlay');
-  if (o) o.style.display = 'none';
-}
-function copyFromModal() {
-  const pre = document.getElementById('wa-modal-content');
-  const btn = document.getElementById('wa-modal-copy-btn');
-  if (!pre) return;
-  navigator.clipboard.writeText(pre.textContent).then(() => {
-    if (btn) { btn.textContent = 'Copied ✓'; btn.style.background = '#1A6B3C'; }
-    setTimeout(() => { if(btn){btn.textContent='Copy to Clipboard';btn.style.background='#1A1916';} }, 2000);
-  });
-}
-document.addEventListener('click', e => { const o=document.getElementById('wa-modal-overlay'); if(e.target===o)closeWaModal(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape')closeWaModal(); });
