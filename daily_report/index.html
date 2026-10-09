@@ -61,6 +61,14 @@
   <button class="tab-btn" onclick="switchTab('backup',this)">Drive Backup</button>
 </nav>
 
+<!-- GLOBAL PREPARED BY — fills all 9 reporter fields across tabs -->
+<div style="max-width:1100px;margin:0 auto;padding:10px 24px 0;">
+  <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;">
+    <label style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-tertiary);white-space:nowrap;">Prepared By <span style="font-weight:400;opacity:0.7;">(all reports)</span></label>
+    <input class="field-input" type="text" id="global-reporter" placeholder="Type a name — fills every report's Prepared By" style="flex:1;max-width:280px;">
+  </div>
+</div>
+
 <!-- ═══════════ 9XXX ═══════════ -->
 <div class="tab-panel active" id="panel-9xxx">
 <div class="content">
