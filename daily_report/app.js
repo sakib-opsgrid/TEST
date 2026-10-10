@@ -1549,7 +1549,7 @@ const ALL_REPORTER_FIELD_IDS=[
 ];
 
 function initAllReporterAutocompletes(){
-  ['global-reporter',...ALL_REPORTER_FIELD_IDS].forEach(initReporterAutocomplete);
+  initReporterAutocomplete('global-reporter');
   initGlobalReporterSync();
 }
 
@@ -1557,12 +1557,14 @@ function initAllReporterAutocompletes(){
 function initGlobalReporterSync(){
   const global=document.getElementById('global-reporter');
   if(!global) return;
-  global.addEventListener('input',()=>{
+  const sync=()=>{
     ALL_REPORTER_FIELD_IDS.forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.value=global.value;
     });
-  });
+  };
+  global.addEventListener('input',sync);
+  sync();
 }
 
 /* ── Generic drag-and-drop for all .upload-zone boxes (9xxx, 1xxx, 4xx/5xx HTTP, DLR) ── */
